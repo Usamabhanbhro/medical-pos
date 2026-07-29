@@ -1,0 +1,66 @@
+{
+  "name": "medical-pos",
+  "version": "1.0.4",
+  "main": "main.js",
+  "scripts": {
+    "start": "set ELECTRON_DEV=true && electron .",
+    "start:dev-server": "cd ./frontend && npm start",
+    "build:frontend": "cd ./frontend && npm run build",
+    "build": "npm run build:frontend && electron-builder",
+    "dist": "electron-builder"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "electron-is-dev": "^3.0.1",
+    "png-to-ico": "^2.1.8",
+    "print-js": "^1.6.0",
+    "sharp": "^0.34.3"
+  },
+  "build": {
+    "appId": "com.medical.app",
+    "productName": "Medical POS",
+    "files": [
+      "main.js",
+      "userProfileManager.js",
+      "preload.js",
+      "./frontend/public/**",
+      "./frontend/dist/**",
+      "splash.html"
+    ],
+    "extraResources": [
+      {
+        "from": "./frontend/dist",
+        "to": "frontend/build",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "directories": {
+      "buildResources": "frontend/public"
+    },
+    "win": {
+      "icon": "frontend/public/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    }
+  }
+}

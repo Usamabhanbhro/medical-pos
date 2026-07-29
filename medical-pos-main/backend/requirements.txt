@@ -1,0 +1,18 @@
+# Backend Python dependencies for medical-pos
+fastapi
+uvicorn[standard]
+motor
+pymongo
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==4.0.0
+python-dotenv
+email-validator
+pydantic
+dnspython
+pyjwt
+openpyxl
+
+# Optional / useful utilities
+python-multipart
+aiofiles

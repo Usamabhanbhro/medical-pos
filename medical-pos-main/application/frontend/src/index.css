@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Make header area draggable for Electron frameless windows */
+.titlebar { -webkit-app-region: drag; }
+
+/* Buttons inside the titlebar must opt out of drag so they remain clickable */
+.no-drag-btn { -webkit-app-region: no-drag; }
+
+/* Position titlebar buttons area */
+.titlebar-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; padding: 6px; }
+
+/* Ensure app content isn't hidden under fixed titlebar buttons */
+body > #root > .min-h-screen, .min-h-screen { padding-top: 40px; }
