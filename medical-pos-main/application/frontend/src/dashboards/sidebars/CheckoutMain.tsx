@@ -1,7 +1,9 @@
+import { getErrorMessage } from '../../utils/error';
 import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { createSale, listItems, listDoctors, updateSalePayment, getSaleById, getStoreDetails } from '../../routes/api';
 import { printReceipt } from '../../utils/printReceipt';
 import type { ReceiptData } from '../../utils/printReceipt';
+import type { DoctorRecord, GenericApiResponse, ItemRecord, SaleResponse } from '../../types/api';
 import PartialPaymentModal from './PartialPaymentModal';
 
 const IconTest = ({ className = 'w-5 h-5 text-gray-500' }: { className?: string }) => (
@@ -34,25 +36,25 @@ const CheckoutMain: React.FC = () => {
 	const [patientGender, setPatientGender] = useState<GenderOption>('');
 	const [patientAge, setPatientAge] = useState('');
 	const [referredBy, setReferredBy] = useState('');
-	const [selectedTests, setSelectedTests] = useState<any[]>([]);
+	const [selectedTests, setSelectedTests] = useState<ItemRecord[]>([]);
 	const [discountType, setDiscountType] = useState<'none' | 'flat' | 'percent'>('none');
 	const [discountValue, setDiscountValue] = useState('0');
-	const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
-	const [doctors, setDoctors] = useState<any[]>([]);
+	const [selectedDoctor, setSelectedDoctor] = useState<DoctorRecord | null>(null);
+	const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
 	const [showModal, setShowModal] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
-	const [suggestions, setSuggestions] = useState<any[]>([]);
+	const [suggestions, setSuggestions] = useState<ItemRecord[]>([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
 	const [showSuccessModal, setShowSuccessModal] = useState(false);
-	const [saleData, setSaleData] = useState<any>(null);
+	const [saleData, setSaleData] = useState<SaleResponse | null>(null);
 	const [isPartialPayment, setIsPartialPayment] = useState(false);
 	const [paidAmount, setPaidAmount] = useState('0');
 	
 	// Partial Payment Modal States
 	const [showPartialModal, setShowPartialModal] = useState(false);
 	const [partialSaleId, setPartialSaleId] = useState('');
-	const [partialSaleData, setPartialSaleData] = useState<any>(null);
+	const [partialSaleData, setPartialSaleData] = useState<GenericApiResponse | null>(null);
 	const [additionalPayment, setAdditionalPayment] = useState('');
 	const [partialSuccessMessage, setPartialSuccessMessage] = useState<string | null>(null);
 	const [partialOverlayPhase, setPartialOverlayPhase] = useState<'none' | 'loading' | 'success'>('none');
@@ -176,7 +178,7 @@ const CheckoutMain: React.FC = () => {
 		}
 	};
 
-	const selectSuggestion = (item: any) => {
+	const selectSuggestion = (item: ItemRecord) => {
 		const normalized = {
 			...item,
 			id: item._id ?? item.id,
@@ -337,34 +339,8 @@ const CheckoutMain: React.FC = () => {
 			setShowModal(false);
 			setSuggestions([]);
 			setShowSuggestions(false);
-		} catch (err: any) {
-			let msg = 'Failed to create sale';
-			
-			if (err?.data?.detail) {
-				if (Array.isArray(err.data.detail)) {
-					// If detail is an array of validation errors
-					msg = err.data.detail.map((error: any) => {
-						if (typeof error === 'string') return error;
-						if (error.msg) return error.msg;
-						if (error.message) return error.message;
-						return JSON.stringify(error);
-					}).join(', ');
-				} else if (typeof err.data.detail === 'string') {
-					msg = err.data.detail;
-				} else {
-					msg = JSON.stringify(err.data.detail);
-				}
-			} else if (err?.data) {
-				if (typeof err.data === 'string') {
-					msg = err.data;
-				} else {
-					msg = JSON.stringify(err.data);
-				}
-			} else if (err?.message) {
-				msg = err.message;
-			}
-			
-			setMessage(msg);
+			} catch (err: unknown) {
+				setMessage(getErrorMessage(err, 'Failed to create sale'));
 		} finally {
 			setSubmitting(false);
 			isSubmittingRef.current = false;
@@ -612,7 +588,7 @@ const CheckoutMain: React.FC = () => {
 								<div className="space-y-2">
 									<span className="text-gray-600 font-medium">Tests:</span>
 									<div className="bg-white rounded-lg border p-3 space-y-2 max-w-full">
-										{saleData.test_names.map((testName: string, index: number) => (
+										{(saleData.test_names ?? []).map((testName: string, index: number) => (
 											<div key={index} className="text-sm">
 												<div className="font-medium text-gray-800 break-all overflow-wrap-anywhere leading-relaxed">
 													{testName}
@@ -781,7 +757,7 @@ const CheckoutMain: React.FC = () => {
 								value={selectedDoctor?.id || ''} 
 								onChange={e => {
 										const doctor = doctors.find(d => d.id === e.target.value);
-										setSelectedDoctor(doctor);
+										setSelectedDoctor(doctor ?? null);
 									}} 
 									className="w-full px-3 py-2 border rounded"
 								>
@@ -797,7 +773,7 @@ const CheckoutMain: React.FC = () => {
 							<div className="grid grid-cols-3 gap-2 items-end">
 								<div>
 									<label className="block text-sm font-medium mb-1">Discount Type</label>
-									<select value={discountType} onChange={e => setDiscountType(e.target.value as any)} className="w-full px-3 py-2 border rounded">
+									<select value={discountType} onChange={e => setDiscountType(e.target.value as 'flat' | 'none' | 'percent')} className="w-full px-3 py-2 border rounded">
 										<option value="none">None</option>
 										<option value="percent">Percent</option>
 										<option value="flat">Flat</option>
@@ -895,7 +871,7 @@ const CheckoutMain: React.FC = () => {
 				overlayPhase={partialOverlayPhase}
 				setOverlayPhase={setPartialOverlayPhase}
 				resetModalState={resetPartialModalState}
-				saleAllowsAdditionalPayment={saleAllowsAdditionalPayment}
+				saleAllowsAdditionalPayment={Boolean(saleAllowsAdditionalPayment)}
 				remainingPartialAmount={remainingPartialAmount}
 				updateSalePayment={updateSalePayment}
 				storeInfo={storeInfo}

@@ -1,4 +1,6 @@
+import { getErrorMessage } from '../../utils/error';
 import React, { useState, useEffect } from 'react';
+import type { DoctorRecord, SaleRecord } from '../../types/api';
 import { getSales, getSalesSummary, listDoctors, backend_url } from '../../routes/api';
 
 const IconChart = ({ className = 'w-5 h-5 text-gray-500' }: { className?: string }) => (
@@ -27,7 +29,7 @@ const IconDownload = ({ className = 'w-5 h-5' }: { className?: string }) => (
 );
 
 const Sales: React.FC = () => {
-	const [salesData, setSalesData] = useState<any[]>([]);
+	const [salesData, setSalesData] = useState<SaleRecord[]>([]);
 	const [initialLoading, setInitialLoading] = useState(true);
 	const [dataLoading, setDataLoading] = useState(false);
 	const [totalSubtotal, setTotalSubtotal] = useState(0);
@@ -52,7 +54,7 @@ const Sales: React.FC = () => {
 	const [exportDateTo, setExportDateTo] = useState('');
 	const [exportMonth, setExportMonth] = useState('');
 	const [exportYear, setExportYear] = useState('');
-	const [doctors, setDoctors] = useState<any[]>([]);
+	const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
 	const [exporting, setExporting] = useState(false);
 
 	const fetchSalesData = async () => {
@@ -89,9 +91,9 @@ const Sales: React.FC = () => {
 			setSalesData(salesResponse.sales || []);
 			setTotalPages(salesResponse.total_pages || 1);
 
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Failed to fetch sales data:', err);
-			setError(err?.data?.detail || 'Failed to load sales data');
+			setError(getErrorMessage(err, 'Failed to load sales data'));
 		} finally {
 			setInitialLoading(false);
 			setDataLoading(false);
@@ -237,7 +239,7 @@ const Sales: React.FC = () => {
 					/>
 					<select
 						value={filter}
-						onChange={(e) => setFilter(e.target.value as any)}
+						onChange={(e) => setFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
 						className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-200"
 					>
 						<option value="all">All Time</option>
@@ -406,7 +408,7 @@ const Sales: React.FC = () => {
 										)}
 									</td>
 									<td className="px-3 py-4 align-top text-sm text-gray-900">
-										{formatDate(sale.created_at)}
+										{formatDate(sale.created_at ?? '')}
 									</td>
 								</tr>
 							))}

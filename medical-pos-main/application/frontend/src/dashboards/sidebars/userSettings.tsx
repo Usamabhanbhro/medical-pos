@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/error';
 import React, { useState, useEffect } from 'react';
 import { getUserProfile, updateUserEmail, updateUserPassword, type UserProfileData } from '../../routes/api';
 
@@ -55,8 +56,8 @@ const UserSettings: React.FC = () => {
       const data = await getUserProfile();
       setUserData(data);
       setNewEmail(data.email);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch user data');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to fetch user data'));
     } finally {
       setLoading(false);
     }
@@ -78,9 +79,9 @@ const UserSettings: React.FC = () => {
       setSuccessMessage('Email updated successfully!');
       setUserData(prev => prev ? { ...prev, email: newEmail } : null);
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Extract error message from different possible error structures
-      const errorMessage = err?.data?.detail || err?.message || 'Failed to update email';
+      const errorMessage = getErrorMessage(err, 'Failed to update email');
       setError(errorMessage);
       setTimeout(() => setError(null), 5000);
     } finally {
@@ -117,9 +118,9 @@ const UserSettings: React.FC = () => {
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Extract error message from different possible error structures
-      const errorMessage = err?.data?.detail || err?.message || 'Failed to update password';
+      const errorMessage = getErrorMessage(err, 'Failed to update password');
       setError(errorMessage);
       setTimeout(() => setError(null), 5000);
     } finally {

@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/error';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createManagedUser, deleteManagedUser, listManagedUsers, updateManagedUser } from '../../routes/api';
 import type { ManagedUser, CreateManagedUserPayload, UpdateManagedUserPayload } from '../../routes/api';
@@ -47,8 +48,8 @@ const UserManagement: React.FC = () => {
       const filterRole = roleFilter === 'all' ? undefined : roleFilter;
       const data = await listManagedUsers(query.trim(), filterRole);
       setUsers(data);
-    } catch (err: any) {
-      const detail = err?.data?.detail ?? err?.message ?? 'Failed to load users';
+    } catch (err: unknown) {
+      const detail = getErrorMessage(err, 'Failed to load users');
       setError(detail);
     } finally {
       setLoading(false);
@@ -154,8 +155,8 @@ const UserManagement: React.FC = () => {
         setSuccess('User created successfully');
       }
       closeForm();
-    } catch (err: any) {
-      const detail = err?.data?.detail ?? err?.message ?? 'Failed to save user';
+    } catch (err: unknown) {
+      const detail = getErrorMessage(err, 'Failed to save user');
       setFormError(detail);
     } finally {
       setIsSubmitting(false);
@@ -169,8 +170,8 @@ const UserManagement: React.FC = () => {
       setUsers(prev => prev.filter(u => u.id !== deleteCandidate.id));
       setSuccess('User deleted successfully');
       setDeleteCandidate(null);
-    } catch (err: any) {
-      const detail = err?.data?.detail ?? err?.message ?? 'Failed to delete user';
+    } catch (err: unknown) {
+      const detail = getErrorMessage(err, 'Failed to delete user');
       setError(detail);
     }
   };

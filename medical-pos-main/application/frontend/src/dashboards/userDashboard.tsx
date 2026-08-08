@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../context/auth_context';
+import { useAuth } from '../context/use_auth';
 import Checkout from './sidebars/checkout';
 import UserSettings from './sidebars/userSettings';
 import UserPatientHistory from './sidebars/userPatientHistory';
@@ -71,7 +71,9 @@ const UserDashboard = () => {
 	const toggleCollapsed = () => {
 		try {
 			localStorage.setItem('mp_sidebar_collapsed', collapsed ? '0' : '1');
-		} catch {}
+		} catch {
+		// Storage may be unavailable in restricted browser contexts.
+	}
 		setCollapsed(s => !s);
 	};
 

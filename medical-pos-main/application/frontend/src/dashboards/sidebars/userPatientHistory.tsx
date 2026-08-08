@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/error';
 import React, { useState, useEffect } from 'react';
 import { getPatients } from '../../routes/api';
 
@@ -88,8 +89,8 @@ const UserPatientHistory: React.FC = () => {
       setPatients(data.patients || []);
       setTotalPages(data.total_pages || 1);
       setTotalPatients(data.total || 0);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Request failed'))
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../context/auth_context';
+import { useAuth } from '../context/use_auth';
 import Settings from './sidebars/settings';
 import Items from './sidebars/items';
 import Checkout from './sidebars/checkout';
@@ -120,7 +120,9 @@ const AdminDashboard = () => {
 	const toggleCollapsed = () => {
 		try {
 			localStorage.setItem('mp_sidebar_collapsed', collapsed ? '0' : '1');
-		} catch {}
+		} catch {
+		// Storage may be unavailable in restricted browser contexts.
+	}
 		setCollapsed(s => !s);
 	};
 

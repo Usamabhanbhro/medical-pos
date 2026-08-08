@@ -1,10 +1,12 @@
+import { getErrorMessage } from '../../utils/error';
 import React, { useRef } from 'react';
 import { printReceipt, type ReceiptData } from '../../utils/printReceipt';
+import type { GenericApiResponse } from '../../types/api';
 
 interface PartialPaymentModalProps {
   show: boolean;
   onClose: () => void;
-  saleData: any;
+  saleData: GenericApiResponse | null;
   saleId: string;
   additionalPayment: string;
   setAdditionalPayment: (val: string) => void;
@@ -14,10 +16,10 @@ interface PartialPaymentModalProps {
   resetModalState: () => void;
   saleAllowsAdditionalPayment: boolean;
   remainingPartialAmount: number;
-  updateSalePayment: (saleId: string, amount: number, options?: { withReceipt?: boolean }) => Promise<any>;
+  updateSalePayment: (saleId: string, amount: number, options?: { withReceipt?: boolean }) => Promise<GenericApiResponse>;
   storeInfo: { name: string; address: string; phone: string };
-  getSaleById: (saleId: string) => Promise<any>;
-  setSaleData: (data: any) => void;
+  getSaleById: (saleId: string) => Promise<GenericApiResponse>;
+  setSaleData: (data: GenericApiResponse | null) => void;
   setSaleId: (id: string) => void;
   errorMessage: string | null;
   setErrorMessage: (msg: string | null) => void;
@@ -48,8 +50,8 @@ const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
   const isFetchingRef = useRef(false);
   const isUpdatingRef = useRef(false);
   
-  const buildReceiptPayload = (sale: any, latestPayment: number): ReceiptData => {
-    const toNumber = (value: any, fallback = 0) => {
+  const buildReceiptPayload = (sale: GenericApiResponse, latestPayment: number): ReceiptData => {
+    const toNumber = (value: unknown, fallback = 0) => {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : fallback;
     };
@@ -58,7 +60,7 @@ const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
 
     const testsArray = Array.isArray(sale?.tests) ? sale.tests : [];
     const mappedTests: ReceiptData['tests'] = testsArray.length > 0
-      ? testsArray.map((item: any) => ({
+      ? testsArray.map((item: GenericApiResponse) => ({
           name: String(item?.name ?? item?.test_name ?? sale?.test_name ?? 'Test'),
           sell_price: toNumber(item?.sell_price ?? item?.amount ?? item?.price, 0),
         }))
@@ -102,12 +104,12 @@ const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
     const stillPartial = remainingAmount > 0;
 
     return {
-      patientName: sale?.patient_name ?? 'Walk-in Customer',
-      patientGender: sale?.patient_gender ?? undefined,
-      patientAge: sale?.patient_age ?? undefined,
-      patientPhone: sale?.phone ?? undefined,
-      referredBy: sale?.hospital_name ?? undefined,
-      doctorName: sale?.doctor_name ?? 'N/A',
+      patientName: String(sale?.patient_name ?? 'Walk-in Customer'),
+      patientGender: typeof sale?.patient_gender === 'string' ? sale.patient_gender : undefined,
+      patientAge: typeof sale?.patient_age === 'number' ? sale.patient_age : undefined,
+      patientPhone: typeof sale?.phone === 'string' ? sale.phone : undefined,
+      referredBy: typeof sale?.hospital_name === 'string' ? sale.hospital_name : undefined,
+      doctorName: String(sale?.doctor_name ?? 'N/A'),
       date: new Date(),
       tests: mappedTests,
       subtotal,
@@ -117,7 +119,7 @@ const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
       storeName: storeInfo.name,
       storeAddress: storeInfo.address,
   storePhone: storeInfo.phone,
-      saleId: sale?.sale_id ?? '',
+      saleId: String(sale?.sale_id ?? ''),
       isPartial: stillPartial,
       paidAmount: normalizedLatest,
       remainingAmount,
@@ -226,8 +228,8 @@ const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
                     setSaleData(sale);
                     const remaining = Number(sale?.remaining_amount ?? 0);
                     setAdditionalPayment(remaining > 0 ? String(remaining) : '');
-                  } catch (err: any) {
-                    setErrorMessage('Sale not found or error: ' + (err?.data?.detail || 'Unknown error'));
+                  } catch (err: unknown) {
+                    setErrorMessage('Sale not found or error: ' + (getErrorMessage(err, 'Unknown error')));
                   } finally {
                     isFetchingRef.current = false;
                   }
@@ -261,7 +263,7 @@ const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
                 <div>
                   <span className="font-medium text-gray-600">Test:</span>
                   <p className="text-gray-800 font-medium break-all overflow-wrap-anywhere leading-relaxed py-1">
-                    {saleData.test_name}
+                    {String(saleData.test_name ?? '')}
                   </p>
                 </div>
                 <div>
@@ -361,7 +363,7 @@ const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
                       const normalizedAmount = Math.round(amount * 100) / 100;
                       setOverlayPhase('loading');
                       try {
-                        const updatedSale = await updateSalePayment(saleData.sale_id, normalizedAmount, { withReceipt: true });
+                        const updatedSale = await updateSalePayment(String(saleData.sale_id ?? ''), normalizedAmount, { withReceipt: true });
                         setSaleData(updatedSale);
 
                         const receiptPayload = buildReceiptPayload(updatedSale, normalizedAmount);
@@ -374,10 +376,10 @@ const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
                           isUpdatingRef.current = false;
                           onClose();
                         }, 2000);
-                      } catch (err: any) {
+                      } catch (err: unknown) {
                         setOverlayPhase('none');
                         isUpdatingRef.current = false;
-                        setErrorMessage('Failed to update payment: ' + (err?.data?.detail || err?.message || 'Unknown error'));
+                        setErrorMessage('Failed to update payment: ' + (getErrorMessage(err, 'Unknown error')));
                       }
                     }}
                     disabled={!saleAllowsAdditionalPayment || !additionalPayment || parseFloat(additionalPayment) <= 0 || overlayPhase !== 'none' || isUpdatingRef.current}

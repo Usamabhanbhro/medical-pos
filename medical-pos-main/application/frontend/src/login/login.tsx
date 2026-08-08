@@ -1,9 +1,10 @@
+import { getErrorMessage } from '../utils/error';
 
 
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../context/auth_context';
+import { useAuth } from '../context/use_auth';
 
 const Login: React.FC = () => {
 	const [email, setEmail] = useState('');
@@ -33,16 +34,11 @@ const Login: React.FC = () => {
 				window.clearTimeout(errorTimerRef.current);
 				errorTimerRef.current = null;
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			// Debug/log the error so we can see unexpected shapes in the console
 			console.error('Login attempt failed:', err);
 			// Derive a friendly message from several possible fields
-			const msg =
-				err?.data?.detail ||
-				err?.data?.message ||
-				err?.message ||
-				(typeof err === 'string' ? err : '') ||
-				'Login failed';
+				const msg = getErrorMessage(err, 'Login failed');
 			setError(String(msg));
 			if (errorTimerRef.current) window.clearTimeout(errorTimerRef.current);
 			errorTimerRef.current = window.setTimeout(() => setError(''), 3000);

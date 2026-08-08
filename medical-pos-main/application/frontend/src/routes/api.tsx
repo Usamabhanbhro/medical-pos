@@ -1,3 +1,5 @@
+import type { DoctorPayload, DoctorRecord, DoctorResponse, GenericApiResponse, ItemPayload, ItemRecord, ItemResponse, LedgerPayload, LedgerResponse, LedgerSummary, PatientResponse, PatientUpdatePayload, SaleRecord, SaleResponse } from '../types/api';
+
 const backend_url = import.meta.env.VITE_BACKEND_URL || "https://72.60.197.215.sslip.io";
 
 // Export backend_url for file downloads and other direct usage
@@ -29,20 +31,22 @@ export interface StoreDetailsPayload {
   phone: string;
 }
 
-const normalizeStoreDetails = (data: any): StoreDetailsPayload => ({
-  name: data?.name ?? data?.storeName ?? '',
-  address: data?.address ?? data?.storeAddress ?? '',
-  phone: data?.phone ?? data?.storePhone ?? '',
+const getString = (value: unknown): string => typeof value === 'string' ? value : '';
+
+const normalizeStoreDetails = (data: GenericApiResponse): StoreDetailsPayload => ({
+  name: getString(data.name ?? data.storeName),
+  address: getString(data.address ?? data.storeAddress),
+  phone: getString(data.phone ?? data.storePhone),
 });
 
-const safeParseJson = async (response: Response): Promise<any> => {
+const safeParseJson = async (response: Response): Promise<GenericApiResponse> => {
   try {
     return await response.json();
-  } catch (err) {
+  } catch {
     try {
       const text = await response.text();
       return text ? { detail: text } : {};
-    } catch (innerErr) {
+    } catch {
       return {};
     }
   }
@@ -76,7 +80,7 @@ export async function saveStoreDetails(payload: StoreDetailsPayload): Promise<St
 }
 
 // Session management
-export async function login(username: string, password: string): Promise<any> {
+export async function login(username: string, password: string): Promise<User> {
   const response = await fetch(`${backend_url}/api/session/login`, {
     method: 'POST',
     credentials: 'include',
@@ -84,15 +88,15 @@ export async function login(username: string, password: string): Promise<any> {
     body: JSON.stringify({ username, password })
   });
   // Parse response safely: some servers may return empty/non-JSON bodies on errors
-  let data: any = null;
+  let data: GenericApiResponse = {};
   try {
     data = await response.json();
-  } catch (err) {
+  } catch {
     // fallback to text or status
     try {
       const txt = await response.text();
       data = txt ? { detail: txt } : { detail: response.statusText };
-    } catch (e) {
+    } catch {
       data = { detail: response.statusText };
     }
   }
@@ -101,7 +105,7 @@ export async function login(username: string, password: string): Promise<any> {
     throw { status: response.status, data };
   }
 
-  return data;
+  return data as unknown as User;
 }
 
 // Validate session/token
@@ -130,7 +134,7 @@ export async function logout(): Promise<void> {
 }
 
 // Items API helpers
-export async function listItems(q: string, page: number, per_page: number): Promise<any> {
+export async function listItems(q: string, page: number, per_page: number): Promise<ItemResponse> {
   const response = await fetch(`${backend_url}/api/items?q=${encodeURIComponent(q ?? '')}&page=${page}&per_page=${per_page}`, {
     method: 'GET',
     credentials: 'include',
@@ -141,7 +145,7 @@ export async function listItems(q: string, page: number, per_page: number): Prom
   return data;
 }
 
-export async function createItem(payload: Record<string, any>): Promise<any> {
+export async function createItem(payload: ItemPayload): Promise<ItemRecord> {
   const response = await fetch(`${backend_url}/api/items`, {
     method: 'POST',
     credentials: 'include',
@@ -153,7 +157,7 @@ export async function createItem(payload: Record<string, any>): Promise<any> {
   return data;
 }
 
-export async function updateItem(id: string, payload: Record<string, any>): Promise<any> {
+export async function updateItem(id: string, payload: Partial<ItemPayload>): Promise<ItemRecord> {
   const response = await fetch(`${backend_url}/api/items/${id}`, {
     method: 'PUT',
     credentials: 'include',
@@ -165,7 +169,7 @@ export async function updateItem(id: string, payload: Record<string, any>): Prom
   return data;
 }
 
-export async function deleteItem(id: string): Promise<any> {
+export async function deleteItem(id: string): Promise<GenericApiResponse | null> {
   const response = await fetch(`${backend_url}/api/items/${id}`, {
     method: 'DELETE',
     credentials: 'include',
@@ -177,7 +181,7 @@ export async function deleteItem(id: string): Promise<any> {
 }
 
 // Doctors API helpers
-export async function listDoctors(q: string, page: number, per_page: number): Promise<any> {
+export async function listDoctors(q: string, page: number, per_page: number): Promise<DoctorResponse> {
   const response = await fetch(`${backend_url}/api/doctors?q=${encodeURIComponent(q ?? '')}&page=${page}&per_page=${per_page}`, {
     method: 'GET',
     credentials: 'include',
@@ -188,7 +192,7 @@ export async function listDoctors(q: string, page: number, per_page: number): Pr
   return data;
 }
 
-export async function createDoctor(payload: Record<string, any>): Promise<any> {
+export async function createDoctor(payload: DoctorPayload): Promise<DoctorRecord> {
   const response = await fetch(`${backend_url}/api/doctors`, {
     method: 'POST',
     credentials: 'include',
@@ -200,7 +204,7 @@ export async function createDoctor(payload: Record<string, any>): Promise<any> {
   return data;
 }
 
-export async function updateDoctor(id: string, payload: Record<string, any>): Promise<any> {
+export async function updateDoctor(id: string, payload: Partial<DoctorPayload>): Promise<DoctorRecord> {
   const response = await fetch(`${backend_url}/api/doctors/${id}`, {
     method: 'PUT',
     credentials: 'include',
@@ -212,7 +216,7 @@ export async function updateDoctor(id: string, payload: Record<string, any>): Pr
   return data;
 }
 
-export async function deleteDoctor(id: string): Promise<any> {
+export async function deleteDoctor(id: string): Promise<GenericApiResponse | null> {
   const response = await fetch(`${backend_url}/api/doctors/${id}`, {
     method: 'DELETE',
     credentials: 'include',
@@ -224,7 +228,7 @@ export async function deleteDoctor(id: string): Promise<any> {
 }
 
 // Sales
-export async function createSale(payload: Record<string, any>): Promise<any> {
+export async function createSale(payload: Record<string, unknown>): Promise<SaleResponse> {
   const response = await fetch(`${backend_url}/api/sales`, {
     method: 'POST',
     credentials: 'include',
@@ -232,7 +236,7 @@ export async function createSale(payload: Record<string, any>): Promise<any> {
     body: JSON.stringify(payload),
   });
   // Some responses may not be JSON
-  let data: any = null;
+  let data: GenericApiResponse = {};
   try {
     data = await response.json();
   } catch {
@@ -244,10 +248,10 @@ export async function createSale(payload: Record<string, any>): Promise<any> {
     }
   }
   if (!response.ok) throw { status: response.status, data };
-  return data;
+  return data as unknown as SaleResponse;
 }
 
-export async function getPatients(page: number = 1, per_page: number = 15, searchQuery?: string): Promise<any> {
+export async function getPatients(page: number = 1, per_page: number = 15, searchQuery?: string): Promise<PatientResponse> {
   const params = new URLSearchParams({
     page: page.toString(),
     per_page: per_page.toString()
@@ -267,7 +271,7 @@ export async function getPatients(page: number = 1, per_page: number = 15, searc
   return data;
 }
 
-export async function updatePatient(patientId: string, patientData: any): Promise<any> {
+export async function updatePatient(patientId: string, patientData: PatientUpdatePayload): Promise<GenericApiResponse> {
   const response = await fetch(`${backend_url}/api/sales/patients/${patientId}`, {
     method: 'PUT',
     credentials: 'include',
@@ -279,7 +283,7 @@ export async function updatePatient(patientId: string, patientData: any): Promis
   return data;
 }
 
-export async function deletePatient(patientId: string): Promise<any> {
+export async function deletePatient(patientId: string): Promise<GenericApiResponse> {
   const response = await fetch(`${backend_url}/api/sales/patients/${patientId}`, {
     method: 'DELETE',
     credentials: 'include',
@@ -290,7 +294,7 @@ export async function deletePatient(patientId: string): Promise<any> {
   return data;
 }
 
-export async function deletePatientTest(patientId: string, saleId: string): Promise<any> {
+export async function deletePatientTest(patientId: string, saleId: string): Promise<GenericApiResponse> {
   const response = await fetch(`${backend_url}/api/sales/patients/${patientId}/tests/${saleId}`, {
     method: 'DELETE',
     credentials: 'include',
@@ -308,7 +312,7 @@ export async function getSales(
   per_page?: number,
   date_filter?: string,
   doctor_id?: string
-): Promise<any> {
+): Promise<{ sales: SaleRecord[]; total_pages?: number; total?: number }> {
   const params = new URLSearchParams();
   if (q) params.append('q', q);
   if (page) params.append('page', page.toString());
@@ -326,7 +330,7 @@ export async function getSales(
   return data;
 }
 
-export async function getSalesSummary(date_filter?: string): Promise<any> {
+export async function getSalesSummary(date_filter?: string): Promise<{ total_subtotal?: number; total_discount?: number; total_profit?: number; total_revenue?: number; total_sales?: number; total_doctor_share?: number; total_profit_after_share?: number }> {
   const params = new URLSearchParams();
   if (date_filter) params.append('date_filter', date_filter);
 
@@ -337,14 +341,14 @@ export async function getSalesSummary(date_filter?: string): Promise<any> {
   });
   const data = await response.json();
   if (!response.ok) throw { status: response.status, data };
-  return data;
+  return data as unknown as { total_subtotal?: number; total_discount?: number; total_profit?: number; total_revenue?: number; total_sales?: number; total_doctor_share?: number; total_profit_after_share?: number };
 }
 
 export async function updateSalePayment(
   saleId: string,
   additionalPayment: number,
   options?: { withReceipt?: boolean }
-): Promise<any> {
+): Promise<GenericApiResponse> {
   const payload: { additional_payment: number; with_receipt?: boolean } = {
     additional_payment: additionalPayment,
   };
@@ -361,10 +365,10 @@ export async function updateSalePayment(
   });
   const data = await response.json();
   if (!response.ok) throw { status: response.status, data };
-  return data;
+  return data as unknown as { total_subtotal?: number; total_discount?: number; total_profit?: number; total_revenue?: number; total_sales?: number; total_doctor_share?: number; total_profit_after_share?: number };
 }
 
-export async function getSaleById(saleId: string): Promise<any> {
+export async function getSaleById(saleId: string): Promise<GenericApiResponse> {
   const response = await fetch(`${backend_url}/api/sales/${saleId}`, {
     method: 'GET',
     credentials: 'include',
@@ -372,7 +376,7 @@ export async function getSaleById(saleId: string): Promise<any> {
   });
   const data = await response.json();
   if (!response.ok) throw { status: response.status, data };
-  return data;
+  return data as unknown as { total_subtotal?: number; total_discount?: number; total_profit?: number; total_revenue?: number; total_sales?: number; total_doctor_share?: number; total_profit_after_share?: number };
 }
 
 // User management (admin)
@@ -435,7 +439,7 @@ export async function deleteManagedUser(userId: string): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok && response.status !== 204) {
-    let data: any = null;
+    let data: GenericApiResponse = {};
     try {
       data = await response.json();
     } catch {
@@ -453,7 +457,7 @@ export async function getLedgerEntries(
   q?: string,
   page: number = 1,
   per_page: number = 15
-): Promise<any> {
+): Promise<LedgerResponse> {
   const params = new URLSearchParams();
   
   // Handle multiple categories
@@ -478,10 +482,10 @@ export async function getLedgerEntries(
   });
   const data = await safeParseJson(response);
   if (!response.ok) throw { status: response.status, data };
-  return data;
+  return data as unknown as LedgerResponse;
 }
 
-export async function createLedgerEntry(payload: any): Promise<any> {
+export async function createLedgerEntry(payload: LedgerPayload): Promise<GenericApiResponse> {
   const response = await fetch(`${backend_url}/api/ledger/entries`, {
     method: 'POST',
     credentials: 'include',
@@ -493,7 +497,7 @@ export async function createLedgerEntry(payload: any): Promise<any> {
   return data;
 }
 
-export async function updateLedgerEntry(entryId: string, payload: any): Promise<any> {
+export async function updateLedgerEntry(entryId: string, payload: Partial<LedgerPayload>): Promise<GenericApiResponse> {
   const response = await fetch(`${backend_url}/api/ledger/entries/${entryId}`, {
     method: 'PUT',
     credentials: 'include',
@@ -521,7 +525,7 @@ export async function getLedgerSummary(
   category?: string | string[],
   date_from?: string,
   date_to?: string
-): Promise<any> {
+): Promise<LedgerSummary> {
   const params = new URLSearchParams();
   
   // Handle multiple categories
@@ -543,7 +547,7 @@ export async function getLedgerSummary(
   });
   const data = await safeParseJson(response);
   if (!response.ok) throw { status: response.status, data };
-  return data;
+  return data as unknown as LedgerSummary;
 }
 
 // User Settings API
@@ -564,10 +568,10 @@ export async function getUserProfile(): Promise<UserProfileData> {
   
   const data = await safeParseJson(response);
   if (!response.ok) throw { status: response.status, data };
-  return data;
+  return data as unknown as UserProfileData;
 }
 
-export async function updateUserEmail(email: string): Promise<any> {
+export async function updateUserEmail(email: string): Promise<GenericApiResponse> {
   const response = await fetch(`${backend_url}/api/user/update-email`, {
     method: 'PUT',
     credentials: 'include',
@@ -582,7 +586,7 @@ export async function updateUserEmail(email: string): Promise<any> {
   return data;
 }
 
-export async function updateUserPassword(currentPassword: string, newPassword: string): Promise<any> {
+export async function updateUserPassword(currentPassword: string, newPassword: string): Promise<GenericApiResponse> {
   const response = await fetch(`${backend_url}/api/user/update-password`, {
     method: 'PUT',
     credentials: 'include',

@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/error';
 import React, { useState, useEffect } from 'react';
 import { getPatients, updatePatient, deletePatient, deletePatientTest } from '../../routes/api';
 
@@ -106,8 +107,8 @@ const PatientHistory: React.FC = () => {
       setPatients(data.patients || []);
       setTotalPages(data.total_pages || 1);
       setTotalPatients(data.total || 0);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Request failed'))
     } finally {
       setLoading(false);
     }
@@ -141,8 +142,8 @@ const PatientHistory: React.FC = () => {
       ));
       setEditingPatient(null);
       setEditForm({ name: '', phone: '' });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Request failed'))
     }
   };
 
@@ -151,8 +152,8 @@ const PatientHistory: React.FC = () => {
       await deletePatient(patientId);
       setPatients(patients.filter(p => p.id !== patientId));
       setShowDeleteConfirm(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Request failed'))
     }
   };
 
@@ -165,8 +166,8 @@ const PatientHistory: React.FC = () => {
           : p
       ));
       setShowTestDeleteConfirm(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Request failed'))
     }
   };
 

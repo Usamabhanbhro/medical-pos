@@ -1,3 +1,4 @@
+import { getErrorStatus } from '../../utils/error';
 import React, { useEffect, useState } from 'react';
 import { listItems, createItem, updateItem, deleteItem } from '../../routes/api';
 
@@ -45,7 +46,7 @@ const Items: React.FC = () => {
 					try {
 						const data = await listItems(query, page, PER_PAGE);
 						if (mounted) {
-							setItems(data.items ? data.items.map((d: any) => ({ id: d.id, name: d.name, cost_price: d.cost_price || 0, sell_price: d.sell_price || 0 })) : data.map((d: any) => ({ id: d.id, name: d.name, cost_price: d.cost_price || 0, sell_price: d.sell_price || 0 })));
+							setItems(data.items.map((d) => ({ id: d.id ?? d._id ?? '', name: d.name, cost_price: d.cost_price ?? d.costPrice ?? d.cost ?? 0, sell_price: d.sell_price ?? d.sellPrice ?? d.price ?? 0 })));
 							setTotal(data.total ?? (Array.isArray(data) ? data.length : (data.items ? data.items.length : 0)));
 						}
 					} catch (err) {
@@ -249,8 +250,8 @@ const Items: React.FC = () => {
 											setItems(prev => prev.map(it => (it.id === updated.id ? { id: updated.id, name: updated.name, cost_price: updated.cost_price, sell_price: updated.sell_price } : it)));
 											setSuccessMessage('Test updated successfully!');
 											setTimeout(() => setSuccessMessage(''), 3000);
-										} catch (err: any) {
-											if (err?.status === 409) {
+										} catch (err: unknown) {
+											if (getErrorStatus(err) === 409) {
 												setFieldErrors(f => ({ ...f, name: 'A test with this name already exists' }));
 												setLoading(false);
 												return;
@@ -260,11 +261,11 @@ const Items: React.FC = () => {
 									} else {
 										try {
 											const created = await createItem({ name: name.trim(), cost_price: parsedCp, sell_price: parsedSp });
-											setItems(prev => [{ id: created.id, name: created.name, cost_price: created.cost_price, sell_price: created.sell_price }, ...prev]);
+											setItems(prev => [{ id: created.id ?? '', name: created.name, cost_price: created.cost_price ?? 0, sell_price: created.sell_price ?? 0 }, ...prev]);
 											setSuccessMessage('Test added successfully!');
 											setTimeout(() => setSuccessMessage(''), 3000);
-										} catch (err: any) {
-											if (err?.status === 409) {
+										} catch (err: unknown) {
+											if (getErrorStatus(err) === 409) {
 												setFieldErrors(f => ({ ...f, name: 'A test with this name already exists' }));
 												setLoading(false);
 												return;

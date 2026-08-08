@@ -2,7 +2,7 @@
 
 import AdminDashboard from './adminDashboard';
 import UserDashboard from './userDashboard';
-import { useAuth } from '../context/auth_context';
+import { useAuth } from '../context/use_auth';
 
 interface DashboardProps {
 	userType: 'admin' | 'user';

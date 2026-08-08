@@ -1,3 +1,4 @@
+import { getErrorStatus } from '../../utils/error';
 import React, { useEffect, useState } from 'react';
 import { listDoctors, createDoctor, updateDoctor, deleteDoctor } from '../../routes/api';
 
@@ -41,8 +42,8 @@ const Doctors: React.FC = () => {
 			try {
 				const data = await listDoctors(query, page, PER_PAGE);
 				if (mounted) {
-					setDoctors(data.doctors ? data.doctors.map((d: any) => ({ id: d.id, name: d.name, commission_type: d.commission_type, commission_value: d.commission_value })) : data.map((d: any) => ({ id: d.id, name: d.name, commission_type: d.commission_type, commission_value: d.commission_value })));
-					setTotal(data.total ?? (Array.isArray(data) ? data.length : (data.doctors ? data.doctors.length : 0)));
+					setDoctors(data.doctors.map((d) => ({ id: d.id ?? d._id ?? '', name: d.name, commission_type: d.commission_type === 'percentage' ? 'percentage' : 'flat', commission_value: d.commission_value ?? 0 })));
+					setTotal(data.total ?? data.doctors.length);
 				}
 			} catch (err) {
 				console.error('load doctors error', err);
@@ -229,18 +230,18 @@ const Doctors: React.FC = () => {
 								try {
 									if (editing) {
 										const updated = await updateDoctor(editing.id, { name: name.trim(), commission_type: commissionType, commission_value: val });
-										setDoctors(prev => prev.map(d => (d.id === editing.id ? { id: updated.id, name: updated.name, commission_type: updated.commission_type, commission_value: updated.commission_value } : d)));
+										setDoctors(prev => prev.map(d => (d.id === editing.id ? { id: updated.id ?? editing.id, name: updated.name, commission_type: updated.commission_type === 'percentage' ? 'percentage' : 'flat', commission_value: updated.commission_value ?? 0 } : d)));
 										setSuccessMessage('Doctor updated successfully!');
 									} else {
 										const created = await createDoctor({ name: name.trim(), commission_type: commissionType, commission_value: val });
-										setDoctors(prev => [{ id: created.id, name: created.name, commission_type: created.commission_type, commission_value: created.commission_value }, ...prev]);
+										setDoctors(prev => [{ id: created.id ?? '', name: created.name, commission_type: created.commission_type === 'percentage' ? 'percentage' : 'flat', commission_value: created.commission_value ?? 0 }, ...prev]);
 										setSuccessMessage('Doctor added successfully!');
 									}
 									setTimeout(() => setSuccessMessage(''), 3000);
 									setShowModal(false);
 									resetForm();
-								} catch (err: any) {
-									if (err?.status === 409) {
+								} catch (err: unknown) {
+									if (getErrorStatus(err) === 409) {
 										setFieldErrors(f => ({ ...f, name: 'A doctor with this name already exists' }));
 										setLoading(false);
 										return;

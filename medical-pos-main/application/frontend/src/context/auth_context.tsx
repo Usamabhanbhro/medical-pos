@@ -1,16 +1,8 @@
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { validateSession, login as apiLogin, logout as apiLogout } from '../routes/api';
 import type { User } from '../routes/api';
-
-interface AuthContextType {
-	user: User | null;
-	loading: boolean;
-	login: (username: string, password: string) => Promise<void>;
-	logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from './auth_shared';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [user, setUser] = useState<User | null>(null);
@@ -31,7 +23,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 			} else {
 				localStorage.removeItem('mp_session_exp');
 			}
-		} catch {}
+		} catch {
+				// Storage may be unavailable in restricted browser contexts.
+			}
 	};
 
 	const setAutoLogout = (exp?: number) => {
@@ -64,7 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 					}
 				}
 			}
-		} catch {}
+		} catch {
+				// Storage may be unavailable in restricted browser contexts.
+			}
 
 		// Then validate session with backend to sync state and get fresh exp
 		(async () => {
@@ -91,7 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 			setAutoLogout((data as User).exp);
 			saveExpToStorage((data as User).exp);
 		}
-		return data;
 	};
 
 		const logout = async () => {
@@ -108,9 +103,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		</AuthContext.Provider>
 	);
 };
-
-export function useAuth() {
-	const ctx = useContext(AuthContext);
-	if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-	return ctx;
-}

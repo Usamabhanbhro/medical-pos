@@ -1,7 +1,7 @@
 export default function TitlebarButtons() {
   const call = async (channel: string) => {
     try {
-      await (window as any).api?.invoke?.(channel);
+      await window.api?.invoke?.(channel);
     } catch (err) {
       console.error('IPC call failed', channel, err);
     }

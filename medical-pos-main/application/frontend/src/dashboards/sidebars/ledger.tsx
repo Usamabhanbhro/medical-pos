@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { LedgerEntry, LedgerPayload, LedgerSummary } from '../../types/api';
 import { getLedgerEntries, createLedgerEntry, updateLedgerEntry, deleteLedgerEntry, getLedgerSummary, backend_url } from '../../routes/api';
 
 const IconMoney = ({ className = 'w-5 h-5 text-gray-500' }: { className?: string }) => (
@@ -142,11 +143,11 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 };
 
 const Ledger: React.FC = () => {
-	const [entries, setEntries] = useState<any[]>([]);
+	const [entries, setEntries] = useState<LedgerEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [showAddModal, setShowAddModal] = useState(false);
 	const [showEditModal, setShowEditModal] = useState(false);
-	const [editingEntry, setEditingEntry] = useState<any>(null);
+	const [editingEntry, setEditingEntry] = useState<LedgerEntry | null>(null);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
 	
@@ -168,7 +169,7 @@ const Ledger: React.FC = () => {
 	const [notes, setNotes] = useState('');
 	
 	// Summary
-	const [summary, setSummary] = useState<any>(null);
+	const [summary, setSummary] = useState<LedgerSummary>({});
 	
 	// Excel export
 	const [showExportModal, setShowExportModal] = useState(false);
@@ -200,13 +201,14 @@ const Ledger: React.FC = () => {
 			// Extract unique categories from all entries (across all pages)
 			// For a more accurate list, we should fetch all entries once to get all categories
 			// But for now, we'll use the entries from the current fetch
-			if (!categoryFilter.length && response.entries) {
-				const categories = [...new Set(response.entries.map((e: any) => e.category).filter(Boolean))] as string[];
-				setAvailableCategories(categories.sort());
-			}
-		} catch (err: any) {
-			console.error('Failed to fetch ledger entries:', err);
-			setError(err?.data?.detail || 'Failed to load ledger entries');
+				if (!categoryFilter.length && response.entries) {
+					const categories = [...new Set(response.entries.map((e: LedgerEntry) => e.category).filter(Boolean))] as string[];
+					setAvailableCategories(categories.sort());
+				}
+		} catch (err) {
+			const errorMessage = err instanceof Error ? err.message : 'Failed to load ledger entries';
+			console.error('Failed to fetch ledger entries:', errorMessage);
+			setError(errorMessage);
 		} finally {
 			setLoading(false);
 		}
@@ -225,7 +227,7 @@ const Ledger: React.FC = () => {
 					10000 // Large number to get most entries
 				);
 				if (response.entries) {
-					const categories = [...new Set(response.entries.map((e: any) => e.category).filter(Boolean))] as string[];
+					const categories = [...new Set(response.entries.map((e: LedgerEntry) => e.category).filter(Boolean))] as string[];
 					setAvailableCategories(categories.sort());
 				}
 			} catch (err) {
@@ -264,7 +266,7 @@ const Ledger: React.FC = () => {
 	const handleAddEntry = async (e: React.FormEvent) => {
 		e.preventDefault();
 		try {
-			const entryData: any = {
+			const entryData: LedgerPayload = {
 				description,
 				amount: parseFloat(amount),
 				category,
@@ -279,8 +281,8 @@ const Ledger: React.FC = () => {
 			fetchEntries();
 			fetchSummary();
 			setTimeout(() => setSuccessMessage(null), 3000);
-		} catch (err: any) {
-			setError(err?.data?.detail || 'Failed to add entry');
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to add entry');
 			setTimeout(() => setError(null), 3000);
 		}
 	};
@@ -290,7 +292,7 @@ const Ledger: React.FC = () => {
 		if (!editingEntry) return;
 
 		try {
-			const updateData: any = {
+			const updateData: Partial<LedgerPayload> = {
 				description,
 				amount: parseFloat(amount),
 				category,
@@ -306,13 +308,13 @@ const Ledger: React.FC = () => {
 			fetchEntries();
 			fetchSummary();
 			setTimeout(() => setSuccessMessage(null), 3000);
-		} catch (err: any) {
-			setError(err?.data?.detail || 'Failed to update entry');
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to update entry');
 			setTimeout(() => setError(null), 3000);
 		}
 	};
 
-	const openEditModal = (entry: any) => {
+	const openEditModal = (entry: LedgerEntry) => {
 		setEditingEntry(entry);
 		setDescription(entry.description);
 		setAmount(String(entry.amount));
@@ -337,8 +339,8 @@ const Ledger: React.FC = () => {
 			fetchEntries();
 			fetchSummary();
 			setTimeout(() => setSuccessMessage(null), 3000);
-		} catch (err: any) {
-			setError(err?.data?.detail || 'Failed to delete entry');
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to delete entry');
 			setTimeout(() => setError(null), 3000);
 		}
 	};
@@ -372,8 +374,8 @@ const Ledger: React.FC = () => {
 			setShowExportModal(false);
 			setSuccessMessage('Excel report generated successfully!');
 			setTimeout(() => setSuccessMessage(null), 3000);
-		} catch (err) {
-			setError('Failed to generate Excel report');
+} catch {
+				setError('Failed to generate Excel report');
 			setTimeout(() => setError(null), 3000);
 		} finally {
 			setExporting(false);
@@ -549,7 +551,7 @@ const Ledger: React.FC = () => {
 							) : (
 								entries.map((entry) => (
 									<tr key={entry.id} className="hover:bg-gray-50">
-										<td className="px-4 py-3 text-sm">{formatDate(entry.date)}</td>
+										<td className="px-4 py-3 text-sm">{formatDate(entry.date ?? '')}</td>
 										<td className="px-4 py-3 text-sm">
 											<span className={`px-2 py-1 rounded-full text-xs font-medium ${
 												entry.category === 'official' 
