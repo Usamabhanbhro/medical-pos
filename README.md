@@ -1,178 +1,122 @@
-```markdown
-# 🏥 Medical POS (Point of Sale & Inventory System)
+# Medical POS
 
-A modern, fast, and scalable Point of Sale (POS) and inventory management system designed specifically for medical stores, pharmacies, and healthcare clinics. Built with **FastAPI** on the backend and powered by **MongoDB** for flexible, high-performance data management.
+[![CI](https://github.com/Usamabhanbhro/medical-pos/actions/workflows/ci.yml/badge.svg)](https://github.com/Usamabhanbhro/medical-pos/actions/workflows/ci.yml)
 
----
+Medical POS is a desktop-oriented point-of-sale and inventory management application for medical stores, pharmacies, and healthcare clinics. The repository contains an Electron shell, a React and TypeScript frontend, and a FastAPI backend that persists operational data in MongoDB.
 
-## 🚀 Tech Stack
+## Screenshots
 
-- **Framework:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+)
-- **ASGI Server:** [Uvicorn](https://www.uvicorn.org/)
-- **Database:** [MongoDB](https://www.mongodb.com/) (using [Motor](https://motor.readthedocs.io/) for async interactions)
-- **Authentication:** JWT (JSON Web Tokens) via `python-jose` & `passlib` (bcrypt)
-- **Data Validation:** [Pydantic](https://docs.pydantic.dev/)
-- **File Handling & Reports:** `openpyxl` (Excel generation), `python-multipart`
+### Login
 
----
+![Medical POS login screen](docs/screenshots/login-screen.webp)
 
-## 📦 Requirements (`requirements.txt`)
+The login screen is the application’s authenticated entry point and was captured from the locally running Vite application without real credentials or personal data.
 
-Below is the list of Python dependencies used in this project:
+## Capabilities
 
-```text
-fastapi
-uvicorn[standard]
-motor
-pymongo
-python-jose[cryptography]
-passlib[bcrypt]
-bcrypt==4.0.0
-python-dotenv
-email-validator
-pydantic
-dnspython
-pyjwt
-openpyxl
-python-multipart
-aiofiles
+The implemented application includes authenticated access, medical item management, doctor management, checkout and sale creation, patient history, sales reporting, expense ledger management, store settings, user profile settings, and administrative user management. Several workflows require a configured MongoDB connection and an authenticated backend session.
 
-```
+## Technology Stack
 
----
+| Area | Technology |
+| --- | --- |
+| Desktop shell | Electron |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS |
+| Backend | FastAPI, Uvicorn, Python 3.10+ |
+| Database | MongoDB through Motor and PyMongo |
+| Authentication | Session-based API flow with JWT-related dependencies |
+| Reporting | `openpyxl` |
+| Package managers | npm and pip |
 
-## 📁 Project Structure
+## Repository Structure
 
 ```text
-medical-pos/
-├── app/
-│   ├── api/             # API routes and endpoint controllers
-│   ├── core/            # Core configuration, security, JWT, and password hashing
-│   ├── db/              # Database connection setup (Motor / MongoDB)
-│   ├── models/          # Pydantic models & schemas
-│   ├── services/        # Business logic & database operations
-│   └── utils/           # Helper utilities (file operations, Excel exports)
-├── .env.example         # Example environment variables template
-├── .gitignore           # Git ignore rules
-├── main.py              # Application entry point
-├── requirements.txt     # Python dependencies
-└── README.md            # Project documentation
-
+.
+├── .github/workflows/ci.yml       # GitHub Actions validation workflow
+├── docs/screenshots/              # Authentic application screenshots
+├── medical-pos-main/
+│   ├── application/               # Electron shell and frontend
+│   │   └── frontend/              # React/Vite application
+│   └── backend/                   # FastAPI service and MongoDB access
+└── README.md
 ```
 
----
+## Prerequisites
 
-## ⚙️ Features
+Install Node.js 22 or a compatible current LTS release, Python 3.10 or newer, and access to a MongoDB deployment. The backend reads `MONGODB_ATLAS_URL` and optionally `MONGODB_DB_NAME` from its environment. Authentication also uses `SECRET_KEY`, `ALGORITHM`, and `ACCESS_TOKEN_EXPIRE_MINUTES`.
 
-* 🔒 **Secure Authentication:** Role-based access control (Admin, Pharmacist, Cashier) with JWT authentication.
-* 💊 **Medicine & Inventory Management:** Batch tracking, expiry alerts, stock management, and pricing controls.
-* 🛒 **Point of Sale (POS):** Fast billing, cart calculations, discount processing, and invoice generation.
-* 📊 **Excel Reporting:** Export sales reports, inventory logs, and analytics using `openpyxl`.
-* ⚡ **Asynchronous Operations:** Fully async database queries powered by Motor for maximum performance.
+Do not commit secrets. Create a local environment file under `medical-pos-main/backend/.env`; that path is ignored by Git.
 
----
+## Installation
 
-## 🛠️ Installation & Setup
-
-### Prerequisites
-
-* **Python:** Version 3.10 or higher
-* **MongoDB:** Local instance running or a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) connection string
-
----
-
-### 1. Clone the Repository
+Install the frontend dependencies:
 
 ```bash
-git clone [https://github.com/Usamabhanbhro/medical-pos.git](https://github.com/Usamabhanbhro/medical-pos.git)
-cd medical-pos
-
+cd medical-pos-main/application/frontend
+npm ci
 ```
 
-### 2. Create and Activate a Virtual Environment
-
-* **On Linux/macOS:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-
-```
-
-
-* **On Windows:**
-```cmd
-python -m venv venv
-venv\Scripts\activate
-
-```
-
-
-
-### 3. Install Dependencies
+Install the backend dependencies in a virtual environment:
 
 ```bash
-pip install --upgrade pip
-pip install -r requirements.txt
-
+cd medical-pos-main/backend
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
----
+## Running Locally
 
-## 🔑 Environment Variables
-
-Create a `.env` file in the root directory of the project:
-
-```env
-# Application Settings
-APP_NAME="Medical POS"
-DEBUG=True
-PORT=8000
-
-# Security / JWT Settings
-SECRET_KEY="your-super-secret-key-change-this-in-production"
-ALGORITHM="HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-
-# MongoDB Configuration
-MONGODB_URL="mongodb://localhost:27017"
-# For MongoDB Atlas use: MONGODB_URL="mongodb+srv://<username>:<password>@cluster.mongodb.net/?retryWrites=true&w=False"
-DATABASE_NAME="medical_pos_db"
-
-```
-
----
-
-## 🏃 Running the Application
-
-Start the development server using **Uvicorn**:
+Start the FastAPI backend from `medical-pos-main/backend`:
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
+source .venv/bin/activate
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Once the server is running, you can access:
+Start the frontend in a separate terminal. Set `VITE_BACKEND_URL` to the address of the backend when it is not using the application’s default deployment URL:
 
-* **Live Application API:** `http://localhost:8000`
-* **Interactive Swagger Documentation:** `http://localhost:8000/docs`
-* **ReDoc Alternative Documentation:** `http://localhost:8000/redoc`
-
----
-
-## 🧪 Testing API Endpoints
-
-FastAPI automatically generates interactive OpenAPI documentation.
-
-1. Open `http://localhost:8000/docs` in your browser.
-2. Register/Login via the `/auth/login` endpoint to obtain a Bearer JWT token.
-3. Click the **Authorize** button at the top right, paste your token, and test protected endpoints directly.
-
----
-
-## 📝 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
+```bash
+cd medical-pos-main/application/frontend
+VITE_BACKEND_URL=http://localhost:8000 npm run dev -- --host 0.0.0.0
 ```
 
+The frontend is then available at `http://localhost:5173/`. The backend exposes its OpenAPI documentation at `http://localhost:8000/docs`.
+
+The Electron wrapper can be started after the frontend build dependencies are installed:
+
+```bash
+cd medical-pos-main/application
+npm ci
+npm run start
 ```
+
+## Validation Commands
+
+The CI workflow runs the checks that are currently defined by the repository:
+
+```bash
+cd medical-pos-main/application/frontend
+npm ci
+npm run lint
+npm run build
+
+cd ../../backend
+python -m pip install -r requirements.txt
+python -m compileall -q .
+```
+
+There is currently no committed automated unit-test suite or Docker configuration in the repository, so the workflow does not invent test or container stages that cannot be executed against the existing project.
+
+## CI/CD
+
+GitHub Actions runs on pushes to `main` and on pull requests. The workflow uses least-privilege read-only repository permissions, caches npm and pip dependencies, lints and builds the frontend, installs backend dependencies, and compiles backend modules to detect syntax errors. It does not publish artifacts or images because no release or registry strategy is configured in the repository.
+
+## Configuration Notes
+
+The frontend’s API client accepts `VITE_BACKEND_URL` at build or development time. The backend’s database initialization creates MongoDB indexes during application startup, so a reachable MongoDB instance is required for full API operation. Use test data and local credentials for development; never use production credentials in screenshots or local validation.
+
+## License
+
+No license file is currently committed in the repository. Add the project’s intended license before distributing the software publicly.

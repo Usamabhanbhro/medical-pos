@@ -57,7 +57,7 @@ const CheckoutMain: React.FC = () => {
 	const [partialSuccessMessage, setPartialSuccessMessage] = useState<string | null>(null);
 	const [partialOverlayPhase, setPartialOverlayPhase] = useState<'none' | 'loading' | 'success'>('none');
 	const [partialErrorMessage, setPartialErrorMessage] = useState<string | null>(null);
-	const debounceRef = useRef<NodeJS.Timeout | null>(null);
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	
 	// Ref to prevent double-click submissions
 	const isSubmittingRef = useRef(false);
